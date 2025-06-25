@@ -63,27 +63,31 @@ const InfiniteCanvas: React.FC = () => {
     }
     if (isDrawing) {
       setIsDrawing(false);
-      setDrawnLines((prev) => [...prev, [...currentLine.current]]);
+      const finishedLine = [...currentLine.current];
       currentLine.current = [];
+      setDrawnLines((prev) => {
+        const updated = [...prev, finishedLine];
+        // 즉시 다시 그리기
+        requestAnimationFrame(() => {
+          redrawWith(updated);
+        });
+        return updated;
+      });
     }
   };
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-  };
-
-  const redraw = () => {
+  const redrawWith = (lines: Point[][]) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
+  
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+  
     ctx.save();
     ctx.translate(offset.x, offset.y);
     ctx.scale(scale, scale);
-
+  
     // 격자
     const gridSize = 50;
     ctx.beginPath();
@@ -97,11 +101,11 @@ const InfiniteCanvas: React.FC = () => {
     }
     ctx.strokeStyle = '#eee';
     ctx.stroke();
-
-    // 저장된 선
+  
+    // 저장된 선 그리기
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
-    drawnLines.forEach(line => {
+    lines.forEach(line => {
       ctx.beginPath();
       line.forEach((point, idx) => {
         if (idx === 0) ctx.moveTo(point.x, point.y);
@@ -109,19 +113,15 @@ const InfiniteCanvas: React.FC = () => {
       });
       ctx.stroke();
     });
-
-    // 현재 그리는 선
-    if (currentLine.current.length > 0) {
-      ctx.beginPath();
-      currentLine.current.forEach((point, idx) => {
-        if (idx === 0) ctx.moveTo(point.x, point.y);
-        else ctx.lineTo(point.x, point.y);
-      });
-      ctx.stroke();
-    }
-
+  
     ctx.restore();
   };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+  };
+
+  const redraw = () => redrawWith(drawnLines);
 
   // 전체 업데이트 시 리렌더
   useEffect(() => {
