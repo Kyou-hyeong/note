@@ -160,20 +160,6 @@ const InfiniteCanvas: React.FC = () => {
     ctx.translate(offset.x, offset.y);
     ctx.scale(scale, scale);
 
-    // 격자 그리기
-    const gridSize = 50;
-    ctx.beginPath();
-    for (let x = -canvas.width; x < canvas.width; x += gridSize) {
-      ctx.moveTo(x, -canvas.height);
-      ctx.lineTo(x, canvas.height);
-    }
-    for (let y = -canvas.height; y < canvas.height; y += gridSize) {
-      ctx.moveTo(-canvas.width, y);
-      ctx.lineTo(canvas.width, y);
-    }
-    ctx.strokeStyle = '#000';
-    ctx.stroke();
-
     // 저장된 선들 그리기
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
