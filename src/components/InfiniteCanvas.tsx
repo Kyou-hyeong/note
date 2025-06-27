@@ -14,20 +14,24 @@ const InfiniteCanvas: React.FC = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawnLines, setDrawnLines] = useState<Point[][]>([]);
   const currentLine = useRef<Point[]>([]);
-
+  // 마우스 휠 관련
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     const scaleFactor = 1.1;
     const newScale = e.deltaY < 0 ? scale * scaleFactor : scale / scaleFactor;
     setScale(newScale);
   };
-
+  // 포인터 관련
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    // 이동 관련
+    // 나중에 수정 필요 - 손가락 터치 입력값 설정
     if (e.button === 1) {
       e.preventDefault();
       setIsDragging(true);
       setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
-    } else if (e.pointerType === 'pen' || e.pointerType === 'touch' || e.pointerType === 'mouse') {
+    } 
+    // 선 그리기 관련
+    else if (e.pointerType === 'pen' || e.pointerType === 'mouse') {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
@@ -38,14 +42,17 @@ const InfiniteCanvas: React.FC = () => {
       setIsDrawing(true);
     }
   };
-
+  // 포인터를 이동 시켰을때
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    
     if (isDragging && dragStart) {
       setOffset({
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y,
       });
-    } else if (isDrawing) {
+    } 
+    
+    else if (isDrawing) {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
@@ -55,7 +62,8 @@ const InfiniteCanvas: React.FC = () => {
       redraw(); // 실시간으로 보여줌
     }
   };
-
+  
+  // 포인터를 제거 했을때
   const handlePointerUp = () => {
     if (isDragging) {
       setIsDragging(false);
@@ -63,27 +71,31 @@ const InfiniteCanvas: React.FC = () => {
     }
     if (isDrawing) {
       setIsDrawing(false);
-      setDrawnLines((prev) => [...prev, [...currentLine.current]]);
+      const finishedLine = [...currentLine.current];
       currentLine.current = [];
+      setDrawnLines((prev) => {
+        const updated = [...prev, finishedLine];
+        // 즉시 다시 그리기
+        requestAnimationFrame(() => {
+          redrawWith(updated);
+        });
+        return updated;
+      });
     }
   };
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-  };
-
-  const redraw = () => {
+  const redrawWith = (lines: Point[][]) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
+  
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+  
     ctx.save();
     ctx.translate(offset.x, offset.y);
     ctx.scale(scale, scale);
-
+  
     // 격자
     const gridSize = 50;
     ctx.beginPath();
@@ -95,13 +107,13 @@ const InfiniteCanvas: React.FC = () => {
       ctx.moveTo(-canvas.width, y);
       ctx.lineTo(canvas.width, y);
     }
-    ctx.strokeStyle = '#eee';
+    ctx.strokeStyle = '#000';
     ctx.stroke();
-
-    // 저장된 선
+  
+    // 저장된 선 그리기
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
-    drawnLines.forEach(line => {
+    lines.forEach(line => {
       ctx.beginPath();
       line.forEach((point, idx) => {
         if (idx === 0) ctx.moveTo(point.x, point.y);
@@ -109,7 +121,6 @@ const InfiniteCanvas: React.FC = () => {
       });
       ctx.stroke();
     });
-
     // 현재 그리는 선
     if (currentLine.current.length > 0) {
       ctx.beginPath();
@@ -119,9 +130,17 @@ const InfiniteCanvas: React.FC = () => {
       });
       ctx.stroke();
     }
-
+  
     ctx.restore();
   };
+
+  const redraw = () => redrawWith(drawnLines);
+
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+  };
+
 
   // 전체 업데이트 시 리렌더
   useEffect(() => {
@@ -134,7 +153,7 @@ const InfiniteCanvas: React.FC = () => {
       width={window.innerWidth}
       height={window.innerHeight}
       style={{
-        border: '1px solid black',
+        border: '1px solid white',
         touchAction: 'none',
         cursor: isDragging ? 'grabbing' : 'crosshair',
       }}
