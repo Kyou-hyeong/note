@@ -5,83 +5,147 @@ type Point = { x: number; y: number };
 
 const InfiniteCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<Point | null>(null);
 
-  // 선 그리기 관련
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawnLines, setDrawnLines] = useState<Point[][]>([]);
   const currentLine = useRef<Point[]>([]);
-  // 마우스 휠 관련
-  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-    const scaleFactor = 1.1;
-    const newScale = e.deltaY < 0 ? scale * scaleFactor : scale / scaleFactor;
-    setScale(newScale);
-  };
-  // 포인터 관련
-  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    // 이동 관련
-    // 나중에 수정 필요 - 손가락 터치 입력값 설정
-    if (e.button === 1) {
-      e.preventDefault();
-      setIsDragging(true);
-      setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
-    } 
-    // 선 그리기 관련
-    else if (e.pointerType === 'pen' || e.pointerType === 'mouse') {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left - offset.x) / scale;
-      const y = (e.clientY - rect.top - offset.y) / scale;
 
+  const pointers = useRef<Map<number, Point>>(new Map());
+  const lastTouchDistance = useRef<number | null>(null);
+  const lastTouchCenter = useRef<Point | null>(null);
+
+  // 마우스 휠로 화면을 드래그할 때 필요한 상태
+  const [isMiddleDragging, setIsMiddleDragging] = useState(false);
+  const middleDragStart = useRef<Point | null>(null);
+
+  const getCanvasCoords = (e: React.PointerEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left - offset.x) / scale,
+      y: (e.clientY - rect.top - offset.y) / scale,
+    };
+  };
+
+  const getDistance = (p1: Point, p2: Point) =>
+    Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+
+  const getCenter = (p1: Point, p2: Point): Point => ({
+    x: (p1.x + p2.x) / 2,
+    y: (p1.y + p2.y) / 2,
+  });
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const pos = { x: e.clientX, y: e.clientY };
+    pointers.current.set(e.pointerId, pos);
+
+    // 마우스 휠 클릭으로 이동 시작
+    if (e.pointerType === 'mouse' && e.button === 1) {
+      setIsMiddleDragging(true);
+      middleDragStart.current = pos;
+      return;
+    }
+
+    // 두 손가락 터치로 확대/이동 시작
+    if (pointers.current.size === 2) {
+      const [p1, p2] = Array.from(pointers.current.values());
+      lastTouchDistance.current = getDistance(p1, p2);
+      lastTouchCenter.current = getCenter(p1, p2);
+    }
+
+    // 하나의 포인터(펜/마우스)로 선 그리기 시작
+    else if (pointers.current.size === 1 && (e.pointerType === 'pen' || (e.pointerType === 'mouse'&&e.button == 0))) {
+      const { x, y } = getCanvasCoords(e);
       currentLine.current = [{ x, y }];
       setIsDrawing(true);
     }
   };
-  // 포인터를 이동 시켰을때
+
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    
-    if (isDragging && dragStart) {
-      setOffset({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y,
-      });
-    } 
-    
+    const pos = { x: e.clientX, y: e.clientY };
+    if (isMiddleDragging && middleDragStart.current) {
+      // 마우스 휠로 화면 이동 처리
+      const dx = pos.x - middleDragStart.current.x;
+      const dy = pos.y - middleDragStart.current.y;
+      setOffset(prev => ({
+        x: prev.x + dx,
+        y: prev.y + dy,
+      }));
+      middleDragStart.current = pos;
+      return;
+    }
+
+    if (!pointers.current.has(e.pointerId)) return;
+    pointers.current.set(e.pointerId, pos);
+
+    if (pointers.current.size === 2) {
+      // 두 손가락으로 pinch + pan
+      const [p1, p2] = Array.from(pointers.current.values());
+      const newDistance = getDistance(p1, p2);
+      const newCenter = getCenter(p1, p2);
+
+      if (lastTouchDistance.current && lastTouchCenter.current) {
+        const scaleFactor = newDistance / lastTouchDistance.current;
+        setScale(prev => prev * scaleFactor);
+
+        const dx = newCenter.x - lastTouchCenter.current.x;
+        const dy = newCenter.y - lastTouchCenter.current.y;
+        setOffset(prev => ({
+          x: prev.x + dx,
+          y: prev.y + dy,
+        }));
+      }
+
+      lastTouchDistance.current = newDistance;
+      lastTouchCenter.current = newCenter;
+    }
+
+    // 선 그리기 처리
     else if (isDrawing) {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left - offset.x) / scale;
-      const y = (e.clientY - rect.top - offset.y) / scale;
+      const { x, y } = getCanvasCoords(e);
       currentLine.current.push({ x, y });
-      redraw(); // 실시간으로 보여줌
+      redraw();
     }
   };
-  
-  // 포인터를 제거 했을때
-  const handlePointerUp = () => {
-    if (isDragging) {
-      setIsDragging(false);
-      setDragStart(null);
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    pointers.current.delete(e.pointerId);
+
+    // 마우스 휠 드래그 중단
+    if (isMiddleDragging && e.button === 1) {
+      setIsMiddleDragging(false);
+      middleDragStart.current = null;
     }
+
+    if (pointers.current.size < 2) {
+      lastTouchDistance.current = null;
+      lastTouchCenter.current = null;
+    }
+
     if (isDrawing) {
       setIsDrawing(false);
       const finishedLine = [...currentLine.current];
       currentLine.current = [];
-      setDrawnLines((prev) => {
+
+      setDrawnLines(prev => {
         const updated = [...prev, finishedLine];
-        // 즉시 다시 그리기
         requestAnimationFrame(() => {
           redrawWith(updated);
         });
         return updated;
       });
     }
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const scaleFactor = 1.1;
+    const newScale = e.deltaY < 0 ? scale * scaleFactor : scale / scaleFactor;
+    setScale(newScale);
   };
 
   const redrawWith = (lines: Point[][]) => {
@@ -91,12 +155,12 @@ const InfiniteCanvas: React.FC = () => {
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
     ctx.save();
+
     ctx.translate(offset.x, offset.y);
     ctx.scale(scale, scale);
-  
-    // 격자
+
+    // 격자 그리기
     const gridSize = 50;
     ctx.beginPath();
     for (let x = -canvas.width; x < canvas.width; x += gridSize) {
@@ -109,8 +173,8 @@ const InfiniteCanvas: React.FC = () => {
     }
     ctx.strokeStyle = '#000';
     ctx.stroke();
-  
-    // 저장된 선 그리기
+
+    // 저장된 선들 그리기
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     lines.forEach(line => {
@@ -121,7 +185,8 @@ const InfiniteCanvas: React.FC = () => {
       });
       ctx.stroke();
     });
-    // 현재 그리는 선
+
+    // 현재 그리고 있는 선
     if (currentLine.current.length > 0) {
       ctx.beginPath();
       currentLine.current.forEach((point, idx) => {
@@ -130,19 +195,16 @@ const InfiniteCanvas: React.FC = () => {
       });
       ctx.stroke();
     }
-  
+
     ctx.restore();
   };
 
   const redraw = () => redrawWith(drawnLines);
 
-
   const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // 우클릭 메뉴 차단
   };
 
-
-  // 전체 업데이트 시 리렌더
   useEffect(() => {
     redraw();
   }, [offset, scale, drawnLines]);
@@ -155,7 +217,7 @@ const InfiniteCanvas: React.FC = () => {
       style={{
         border: '1px solid white',
         touchAction: 'none',
-        cursor: isDragging ? 'grabbing' : 'crosshair',
+        cursor: isMiddleDragging ? 'grabbing' : isDrawing ? 'crosshair' : 'default',
       }}
       onWheel={handleWheel}
       onPointerDown={handlePointerDown}
