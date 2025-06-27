@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import './InfiniteCanvas.css';
 
 type Point = { x: number; y: number };
+type ImageElement = { image: HTMLImageElement; x: number; y: number; width: number; height: number };
 
 const InfiniteCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -15,6 +16,9 @@ const InfiniteCanvas: React.FC = () => {
   const [drawnLines, setDrawnLines] = useState<Point[][]>([]);
   const currentLine = useRef<Point[]>([]);
 
+  // 이미지 리스트
+  const [images, setImages] = useState<ImageElement[]>([]);
+
   // 터치 관련 상태
   const pointers = useRef<Map<number, Point>>(new Map());
   const lastTouchDistance = useRef<number | null>(null);
@@ -24,10 +28,9 @@ const InfiniteCanvas: React.FC = () => {
   const [isMiddleDragging, setIsMiddleDragging] = useState(false);
   const middleDragStart = useRef<Point | null>(null);
 
-  // 도구 상태 ("pen" 또는 "eraser")
+  // 도구 상태
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
 
-  // 현재 이벤트 위치를 캔버스 좌표계로 변환
   const getCanvasCoords = (e: React.PointerEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
@@ -38,36 +41,25 @@ const InfiniteCanvas: React.FC = () => {
     };
   };
 
-  // 두 점 사이 거리 계산
-  const getDistance = (p1: Point, p2: Point) =>
-    Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+  const getDistance = (p1: Point, p2: Point) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
+  const getCenter = (p1: Point, p2: Point): Point => ({ x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 });
 
-  // 두 점의 중심 계산
-  const getCenter = (p1: Point, p2: Point): Point => ({
-    x: (p1.x + p2.x) / 2,
-    y: (p1.y + p2.y) / 2,
-  });
-
-  // 포인터 눌렀을 때 처리
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const pos = { x: e.clientX, y: e.clientY };
     pointers.current.set(e.pointerId, pos);
 
     if (e.pointerType === 'mouse' && e.button === 1) {
-      // 마우스 휠로 드래그 시작
       setIsMiddleDragging(true);
       middleDragStart.current = pos;
       return;
     }
 
-    // 두 손가락 터치 감지
     if (pointers.current.size === 2) {
       const [p1, p2] = Array.from(pointers.current.values());
       lastTouchDistance.current = getDistance(p1, p2);
       lastTouchCenter.current = getCenter(p1, p2);
     }
 
-    // 지우개 모드일 경우 삭제
     if (tool === 'eraser') {
       eraseAtPointer(e);
     } else if (pointers.current.size === 1 && (e.pointerType === 'pen' || (e.pointerType === 'mouse' && e.button === 0))) {
@@ -77,7 +69,6 @@ const InfiniteCanvas: React.FC = () => {
     }
   };
 
-  // 포인터 이동 시 처리
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const pos = { x: e.clientX, y: e.clientY };
 
@@ -100,10 +91,10 @@ const InfiniteCanvas: React.FC = () => {
       if (lastTouchDistance.current && lastTouchCenter.current) {
         const scaleFactor = newDistance / lastTouchDistance.current;
         setScale(prev => prev * scaleFactor);
-
-        const dx = newCenter.x - lastTouchCenter.current.x;
-        const dy = newCenter.y - lastTouchCenter.current.y;
-        setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+        setOffset(prev => ({
+          x: prev.x + newCenter.x - lastTouchCenter.current!.x,
+          y: prev.y + newCenter.y - lastTouchCenter.current!.y,
+        }));
       }
 
       lastTouchDistance.current = newDistance;
@@ -117,7 +108,6 @@ const InfiniteCanvas: React.FC = () => {
     }
   };
 
-  // 포인터 해제 시 처리
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     pointers.current.delete(e.pointerId);
 
@@ -135,7 +125,6 @@ const InfiniteCanvas: React.FC = () => {
       setIsDrawing(false);
       const finishedLine = [...currentLine.current];
       currentLine.current = [];
-
       setDrawnLines(prev => {
         const updated = [...prev, finishedLine];
         requestAnimationFrame(() => redrawWith(updated));
@@ -144,7 +133,6 @@ const InfiniteCanvas: React.FC = () => {
     }
   };
 
-  // 지우기 함수: 근처 점이 있으면 해당 선 제거
   const eraseAtPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const { x, y } = getCanvasCoords(e);
     const threshold = 10;
@@ -157,7 +145,6 @@ const InfiniteCanvas: React.FC = () => {
     });
   };
 
-  // 휠 확대/축소 처리
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     const scaleFactor = 1.1;
@@ -165,8 +152,7 @@ const InfiniteCanvas: React.FC = () => {
     setScale(newScale);
   };
 
-  // 캔버스 다시 그리기
-  const redrawWith = (lines: Point[][]) => {
+  const redrawWith = (lines: Point[][], imgs = images) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -177,7 +163,10 @@ const InfiniteCanvas: React.FC = () => {
     ctx.translate(offset.x, offset.y);
     ctx.scale(scale, scale);
 
-    // 저장된 선들 그리기
+    imgs.forEach(img => {
+      ctx.drawImage(img.image, img.x, img.y, img.width, img.height);
+    });
+
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     lines.forEach(line => {
@@ -189,7 +178,6 @@ const InfiniteCanvas: React.FC = () => {
       ctx.stroke();
     });
 
-    // 현재 그리고 있는 선 그리기
     if (currentLine.current.length > 0) {
       ctx.beginPath();
       currentLine.current.forEach((point, idx) => {
@@ -204,23 +192,43 @@ const InfiniteCanvas: React.FC = () => {
 
   const redraw = () => redrawWith(drawnLines);
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault(); // 우클릭 차단
+  const handleContextMenu = (e: React.MouseEvent) => e.preventDefault();
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const img = new Image();
+    img.onload = () => {
+      const imgElement: ImageElement = {
+        image: img,
+        x: 100,
+        y: 100,
+        width: img.width * 0.5,
+        height: img.height * 0.5,
+      };
+      setImages(prev => {
+        const updated = [...prev, imgElement];
+        requestAnimationFrame(() => redrawWith(drawnLines, updated));
+        return updated;
+      });
+    };
+    img.src = URL.createObjectURL(file);
   };
 
   useEffect(() => {
     redraw();
-  }, [offset, scale, drawnLines]);
+  }, [offset, scale, drawnLines, images]);
 
   return (
     <div>
-      {/* 도구 선택 버튼 */}
+      {/* 도구 선택 및 이미지 업로드 */}
       <div style={{ position: 'fixed', top: 10, left: 10, zIndex: 10 }}>
         <button onClick={() => setTool('pen')} style={{ marginRight: '10px' }}>Pen</button>
-        <button onClick={() => setTool('eraser')}>Eraser</button>
+        <button onClick={() => setTool('eraser')} style={{ marginRight: '10px' }}>Eraser</button>
+        <input type="file" accept="image/*" onChange={handleImageUpload} />
       </div>
 
-      {/* 캔버스 */}
       <canvas
         ref={canvasRef}
         width={window.innerWidth}
