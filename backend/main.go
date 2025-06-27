@@ -1,21 +1,24 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
+
+	"main/db"
+	"main/handlers"
+
+	"github.com/gorilla/mux"
 )
 
 func main() {
-	// 핸들러 함수 등록
-	http.HandleFunc("/hello", helloHandler)
+	database := db.Connect()
+	defer database.Close()
 
-	// 서버 시작 (포트 8080)
-	fmt.Println("Server starting on port 8080...")
-	log.Fatal(http.ListenAndServe(":8080", nil))
-}
+	r := mux.NewRouter()
 
-// helloHandler는 /hello 경로 요청을 처리합니다.
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, Go Backend!")
+	r.HandleFunc("/api/canvas/save", handlers.SaveCanvas(database)).Methods("POST")
+	r.HandleFunc("/api/canvas/load", handlers.LoadCanvas(database)).Methods("GET")
+
+	log.Println("Server running on http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
