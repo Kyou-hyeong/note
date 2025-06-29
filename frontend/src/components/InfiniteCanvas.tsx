@@ -304,6 +304,40 @@ const InfiniteCanvas: React.FC = () => {
   useEffect(() => {
     redraw();
   }, [offset, scale, drawnLines, images, textBoxes]);
+  // 캔버스 저장하기
+  const handleSave = async () => {
+    const lineData = drawnLines.map(line => ({
+      points: line.map(p => ({ x: p.x, y: p.y }))
+    }));
+  
+    const imageData = images.map(img => ({
+      x: img.x,
+      y: img.y,
+      width: img.width,
+      height: img.height,
+      url: img.image.src,  // <- 여기 중요
+    }));
+  
+    const textData = textBoxes.map(box => ({
+      x: box.x,
+      y: box.y,
+      content: box.text,
+    }));
+  
+    const payload = {
+      lines: lineData,
+      images: imageData,
+      textBoxes: textData
+    };
+  
+    await fetch("http://localhost:8080/api/canvas/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  
+    alert("저장 완료!");
+  };
 
   // 전체 UI 및 캔버스 구성
   return (
@@ -313,6 +347,7 @@ const InfiniteCanvas: React.FC = () => {
         <button onClick={() => setTool('eraser')}>Eraser</button>
         <button onClick={() => setTool('handle')}>Handle</button>
         <button onClick={() => setTool('text')}>Text</button>
+        <button onClick={handleSave}>Save</button>
         <input type="file" accept="image/*" onChange={handleImageUpload} />
       </div>
       <canvas
