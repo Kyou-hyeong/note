@@ -1,7 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
 import './InfiniteCanvas.css';
-// shit hand function fucking
-// issue : text box don't move with hand function
 
 // 선, 이미지, 텍스트 박스를 위한 타입 정의
 type Point = { x: number; y: number };
@@ -81,8 +79,9 @@ const InfiniteCanvas: React.FC = () => {
       currentLine.current = [{ x, y }];
       setIsDrawing(true);
     } else if (tool === 'handle') {
-      // 이미지나 텍스트 클릭 감지
+      // 이미지/텍스트 클릭 감지
       const { x, y } = getCanvasCoords(e);
+      // 이미지 클릭 감지
       for (let i = images.length - 1; i >= 0; i--) {
         const img = images[i];
         if (x >= img.x && x <= img.x + img.width && y >= img.y && y <= img.y + img.height) {
@@ -90,6 +89,7 @@ const InfiniteCanvas: React.FC = () => {
           return;
         }
       }
+      // 텍스트 클릭 감지
       for (let i = textBoxes.length - 1; i >= 0; i--) {
         const box = textBoxes[i];
         const textWidth = 100, textHeight = 30;
@@ -304,20 +304,22 @@ const InfiniteCanvas: React.FC = () => {
   useEffect(() => {
     redraw();
   }, [offset, scale, drawnLines, images, textBoxes]);
+
   // 캔버스 저장하기
   const handleSave = async () => {
+    // 선 저장하기
     const lineData = drawnLines.map(line => ({
       points: line.map(p => ({ x: p.x, y: p.y }))
     }));
-  
+    // 이미지 저장하기
     const imageData = images.map(img => ({
       x: img.x,
       y: img.y,
       width: img.width,
       height: img.height,
-      url: img.image.src,  // <- 여기 중요
+      url: img.image.src,  
     }));
-  
+    // 텍스트 상자 저장하기
     const textData = textBoxes.map(box => ({
       x: box.x,
       y: box.y,
@@ -329,14 +331,25 @@ const InfiniteCanvas: React.FC = () => {
       images: imageData,
       textBoxes: textData
     };
+    
+    try{
+      const res = await fetch("http://localhost:8080/api/canvas/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok){
+        throw new Error(await res.text());
+      }
+
+      alert("저장 완료!");
+    } catch(err){
+      console.error("저장실패:",err);
+      alert("저장에 실패했습니다.");
+    }
+    
   
-    await fetch("http://localhost:8080/api/canvas/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-  
-    alert("저장 완료!");
   };
 
   // 전체 UI 및 캔버스 구성
@@ -347,8 +360,8 @@ const InfiniteCanvas: React.FC = () => {
         <button onClick={() => setTool('eraser')}>Eraser</button>
         <button onClick={() => setTool('handle')}>Handle</button>
         <button onClick={() => setTool('text')}>Text</button>
-        <button onClick={handleSave}>Save</button>
         <input type="file" accept="image/*" onChange={handleImageUpload} />
+        <button onClick={handleSave}>Save</button>
       </div>
       <canvas
         ref={canvasRef}
