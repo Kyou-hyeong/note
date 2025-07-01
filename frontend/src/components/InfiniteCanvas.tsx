@@ -353,6 +353,21 @@ const InfiniteCanvas: React.FC = () => {
     
   
   };
+  const handleLoad = async () => {
+  try {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+    // 서버에서 캔버스 상태 불러오기
+    const res = await fetch(`${API_URL}/api/canvas/load`);
+    if (!res.ok) throw new Error("불러오기 실패");
+    const data = await res.json();
+    
+    redrawWith(data); // 캔버스 상태 업데이트
+    console.log("불러오기 성공", data);
+  } catch (err) {
+    console.error("불러오기 실패:", err);
+  }
+};
+
 
   // 전체 UI 및 캔버스 구성
   return (
@@ -364,6 +379,8 @@ const InfiniteCanvas: React.FC = () => {
         <button onClick={() => setTool('text')}>Text</button>
         <input type="file" accept="image/*" onChange={handleImageUpload} />
         <button onClick={handleSave}>Save</button>
+        <button onClick={handleLoad}>Load</button>
+        <span>Tool: {tool}</span>
       </div>
       <canvas
         ref={canvasRef}
