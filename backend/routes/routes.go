@@ -11,10 +11,7 @@ import (
 
 func RegisterRoutes(db *sql.DB) *mux.Router {
 	r := mux.NewRouter()
-
-	// r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-	// 	w.Write([]byte("ok"))
-	// })
+	// r.HandleFunc("/", handlers.HomeHandler).Methods("GET")
 	r.HandleFunc("/api/canvas/save", handlers.SaveCanvas(db)).Methods("POST")
 	r.HandleFunc("/api/canvas/load", handlers.LoadCanvas(db)).Methods("GET")
 

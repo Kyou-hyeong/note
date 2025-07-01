@@ -353,20 +353,82 @@ const InfiniteCanvas: React.FC = () => {
     
   
   };
+
+  // 캔버스 상태 불러오기
   const handleLoad = async () => {
   try {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-    // 서버에서 캔버스 상태 불러오기
     const res = await fetch(`${API_URL}/api/canvas/load`);
-    if (!res.ok) throw new Error("불러오기 실패");
     const data = await res.json();
-    
-    redrawWith(data); // 캔버스 상태 업데이트
-    console.log("불러오기 성공", data);
-  } catch (err) {
-    console.error("불러오기 실패:", err);
+    console.log("불러온 데이터:", data);
+
+    // ✔ lines 변환
+    const lines = data.lines.map((line: any) => line.points);
+
+    // ✔ 이미지 변환: 실제 <img> 객체 생성
+    const imgs: ImageElement[] = await Promise.all(
+      data.images.map((img: any) => {
+        return new Promise((resolve) => {
+          const image = new Image();
+          image.onload = () => {
+            resolve({
+              image,
+              x: img.x,
+              y: img.y,
+              width: img.width,
+              height: img.height,
+            });
+          };
+          image.onerror = () => {
+            console.warn("이미지 로드 실패:", img.url);
+            resolve({
+              image: new Image(), // 빈 이미지
+              x: img.x,
+              y: img.y,
+              width: img.width,
+              height: img.height,
+            });
+          };
+          image.src = img.url;
+        });
+      })
+    );
+
+    // ✔ 텍스트 박스 변환
+    const texts = data.textBoxes.map((t: any) => ({
+      text: t.content,
+      x: t.x,
+      y: t.y,
+    }));
+
+    // 상태 업데이트 및 다시 그리기
+    setDrawnLines(lines);
+    setImages(imgs);
+    setTextBoxes(texts);
+    redrawWith(lines, imgs, texts);
+  } catch (error) {
+    console.error("불러오기 실패:", error);
   }
 };
+
+
+//   const handleLoad = async () => {
+//   try {
+//     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+//     // 서버에서 캔버스 상태 불러오기
+//     const res = await fetch(`${API_URL}/api/canvas/load`,{
+//       method: "GET",
+//       headers: { "Content-Type": "application/json" },
+//     });
+//     if (!res.ok) throw new Error("불러오기 실패");
+//     const data = await res.json();
+    
+//     redrawWith(data); // 캔버스 상태 업데이트
+//     console.log("불러오기 성공", data);
+//   } catch (err) {
+//     console.error("불러오기 실패:", err);
+//   }
+// };
 
 
   // 전체 UI 및 캔버스 구성
