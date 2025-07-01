@@ -4,18 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"backend/models"
+	"firebase-note/backend/models"
 
 )
 
 // SaveCanvas 핸들러: 프론트에서 보낸 데이터를 DB에 저장
 func SaveCanvas(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var payload struct {
-			Lines     []models.Line     `json:"lines"`
-			Images    []models.Image    `json:"images"`
-			TextBoxes []models.TextBox  `json:"textBoxes"`
-		}
+		var payload models.Payload
 
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			http.Error(w, "잘못된 요청 데이터", http.StatusBadRequest)

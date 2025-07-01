@@ -1,4 +1,4 @@
-module backend
+module firebase-note/backend
 
 go 1.22.8
 

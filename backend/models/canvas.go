@@ -24,8 +24,8 @@ type TextBox struct {
 	Content string  `json:"content"`
 }
 
-type payload struct {
+type Payload struct {
 	Lines   []Line   `json:"lines"`
 	Images  []Image  `json:"images"`
-	TextBox []TextBox `json:"textBoxes"`
+	TextBoxes []TextBox `json:"textBoxes"`
 }

@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import './InfiniteCanvas.css';
 
+
 // 선, 이미지, 텍스트 박스를 위한 타입 정의
 type Point = { x: number; y: number };
 type ImageElement = { image: HTMLImageElement; x: number; y: number; width: number; height: number };
@@ -333,7 +334,8 @@ const InfiniteCanvas: React.FC = () => {
     };
     
     try{
-      const res = await fetch("http://localhost:8080/api/canvas/save", {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await fetch(`${API_URL}/api/canvas/save`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
