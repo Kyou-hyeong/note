@@ -358,60 +358,66 @@ const InfiniteCanvas: React.FC = () => {
 
   // 캔버스 상태 불러오기
   const handleLoad = async () => {
-  try {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-    const res = await fetch(`${API_URL}/api/canvas/load`);
-    const data = await res.json();
-    console.log("불러온 데이터:", data);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await fetch(`${API_URL}/api/canvas/load`);
+      const data = await res.json();
+      console.log("불러온 데이터:", data);
 
-    // ✔ lines 변환
-    const lines = data.lines.map((line: any) => line.points);
+      setDrawnLines([]);
+     setImages([]);
+     setTextBoxes([]);
 
-    // ✔ 이미지 변환: 실제 <img> 객체 생성
-    const imgs: ImageElement[] = await Promise.all(
-      data.images.map((img: any) => {
-        return new Promise((resolve) => {
-          const image = new Image();
-          image.onload = () => {
-            resolve({
-              image,
-              x: img.x,
-              y: img.y,
-              width: img.width,
-              height: img.height,
-            });
-          };
-          image.onerror = () => {
-            console.warn("이미지 로드 실패:", img.url);
-            resolve({
-              image: new Image(), // 빈 이미지
-              x: img.x,
-              y: img.y,
-              width: img.width,
-              height: img.height,
-            });
-          };
-          image.src = img.url;
-        });
-      })
-    );
+      // ✔ lines 변환
+      const lines = (data.lines ?? []).map((line: any) => line.points);
 
-    // ✔ 텍스트 박스 변환
-    const texts = data.textBoxes.map((t: any) => ({
-      text: t.content,
-      x: t.x,
-      y: t.y,
-    }));
+      // ✔ 이미지 변환: 실제 <img> 객체 생성
+      const imgs: ImageElement[] = await Promise.all(
+        (data.images ?? []).map((img: any) => {
+          return new Promise((resolve) => {
+            const image = new Image();
+            image.onload = () => {
+              resolve({
+                image,
+                x: img.x,
+                y: img.y,
+                width: img.width,
+                height: img.height,
+              });
+            };
+            image.onerror = () => {
+              console.warn("이미지 로드 실패:", img.url);
+              resolve({
+                image: new Image(), // 빈 이미지
+                x: img.x,
+                y: img.y,
+                width: img.width,
+                height: img.height,
+              });
+            };
+            image.src = img.url;
+          });
+        })
+      );
 
-    // 상태 업데이트 및 다시 그리기
-    setDrawnLines(lines);
-    setImages(imgs);
-    setTextBoxes(texts);
-    redrawWith(lines, imgs, texts);
-  } catch (error) {
-    console.error("불러오기 실패:", error);
-  }
-};
+      // ✔ 텍스트 박스 변환
+      const texts = (data.textBoxes ?? []).map((t: any) => ({
+        text: t.content,
+        x: t.x,
+        y: t.y,
+      }));
+
+      // 상태 업데이트 및 다시 그리기
+      setDrawnLines(lines);
+      setImages(imgs);
+      setTextBoxes(texts);
+      redrawWith(lines, imgs, texts);
+      console.log(lines, imgs, texts);
+
+    } catch (error) {
+      console.error("불러오기 실패:", error);
+    }
+  };
 
   // 키보드 단축키로 도구 변경
   useEffect(() => {
@@ -456,6 +462,7 @@ const InfiniteCanvas: React.FC = () => {
         <input type="file" accept="image/*" onChange={handleImageUpload} />
         <button onClick={handleSave}>Save</button>
         <button onClick={handleLoad}>Load</button>
+        {/* <button onClick={}>Reset</button> */}
         <span>Tool: {tool}</span>
       </div>
       <canvas
