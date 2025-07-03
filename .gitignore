@@ -16,7 +16,7 @@ dist-ssr
 .vscode/*
 .env
 backend/.env
-backend/upload/*
+backend/uploads/*
 !.vscode/extensions.json
 .idea
 .DS_Store
