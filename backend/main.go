@@ -21,6 +21,9 @@ func main() {
 
 	r := routes.RegisterRoutes(database)
 
+	fs := http.FileServer(http.Dir("./uploads"))
+	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", fs))
+
 	log.Println("Server running at http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(
 		handlers.AllowedOrigins([]string{

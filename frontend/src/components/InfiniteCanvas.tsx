@@ -268,45 +268,47 @@ const InfiniteCanvas: React.FC = () => {
   const handleContextMenu = (e: React.MouseEvent) => e.preventDefault();
 
   // 이미지 업로드 처리
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const img = new Image();
-    img.onload = () => {
-      const imgElement: ImageElement = {
-        image: img,
-        x: 100,
-        y: 100,
-        width: img.width * 0.5,
-        height: img.height * 0.5,
-      };
-      setImages(prev => {
-        const updated = [...prev, imgElement];
-        requestAnimationFrame(() => redrawWith(drawnLines, updated));
-        return updated;
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+      const res = await fetch(`${API_URL}/api/upload`, {
+        method: "POST",
+        body: formData,
       });
-    };
-    img.src = URL.createObjectURL(file);
+
+      if (!res.ok) throw new Error("이미지 업로드 실패");
+
+      const data = await res.json(); // {"filename": "12345.png"}
+      const imageUrl = `${API_URL}/uploads/${data.filename}`; // 🔗 서버 URL
+
+      const img = new Image();
+      img.onload = () => {
+        const imgElement: ImageElement = {
+          image: img,
+          x: 100,
+          y: 100,
+          width: img.width * 0.5,
+          height: img.height * 0.5,
+        };
+        setImages(prev => {
+          const updated = [...prev, imgElement];
+          requestAnimationFrame(() => redrawWith(drawnLines, updated));
+          return updated;
+        });
+      };
+      img.src = imageUrl; // ✅ 서버 URL이므로 재사용 가능
+    } catch (err) {
+      console.error("업로드 실패:", err);
+      alert("이미지 업로드 실패");
+    }
   };
 
-  // 키보드 단축키로 도구 변경
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'e') setTool('eraser');
-      else if (e.key === 'p') setTool('pen');
-      else if (e.key === 'h') setTool('handle');
-      else if (e.key === 't') setTool('text');
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // 상태 변경 시 리렌더링
-  useEffect(() => {
-    redraw();
-  }, [offset, scale, drawnLines, images, textBoxes]);
-
-  // 캔버스 저장하기
   const handleSave = async () => {
     // 선 저장하기
     const lineData = drawnLines.map(line => ({
@@ -345,7 +347,7 @@ const InfiniteCanvas: React.FC = () => {
         throw new Error(await res.text());
       }
 
-      alert("저장 완료!");
+      // alert("저장 완료!");
     } catch(err){
       console.error("저장실패:",err);
       alert("저장에 실패했습니다.");
@@ -411,24 +413,36 @@ const InfiniteCanvas: React.FC = () => {
   }
 };
 
+  // 키보드 단축키로 도구 변경
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'e') setTool('eraser');
+      else if (e.key === 'p') setTool('pen');
+      else if (e.key === 'h') setTool('handle');
+      else if (e.key === 't') setTool('text');
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
-//   const handleLoad = async () => {
-//   try {
-//     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-//     // 서버에서 캔버스 상태 불러오기
-//     const res = await fetch(`${API_URL}/api/canvas/load`,{
-//       method: "GET",
-//       headers: { "Content-Type": "application/json" },
-//     });
-//     if (!res.ok) throw new Error("불러오기 실패");
-//     const data = await res.json();
-    
-//     redrawWith(data); // 캔버스 상태 업데이트
-//     console.log("불러오기 성공", data);
-//   } catch (err) {
-//     console.error("불러오기 실패:", err);
-//   }
-// };
+  // 상태 변경 시 리렌더링
+  useEffect(() => {
+    redraw();
+  }, [offset, scale, drawnLines, images, textBoxes]);
+
+  // 자동 호출
+  useEffect(() => {
+    handleLoad(); // 최초 렌더 시 자동 호출
+  }, []);
+
+  // 자동 저장
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      handleSave();
+    }, 1000); // 1초 후 저장
+
+    return () => clearTimeout(timeout); // 중복 방지
+  }, [drawnLines, images, textBoxes]);
 
 
   // 전체 UI 및 캔버스 구성
