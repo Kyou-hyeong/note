@@ -28,6 +28,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(
 		handlers.AllowedOrigins([]string{
 			"http://localhost:5173",
+			"http://192.168.0.20:5173",
 		}),
 		handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
 		handlers.AllowedHeaders([]string{"Content-Type"}),
