@@ -1,54 +1,48 @@
-# React + TypeScript + Vite
+# NoteWeb - 무한 캔버스 프로젝트
+NoteWeb 프로젝트는 무한 캔버스 환경에서 이미지, 텍스트 상자, 자유로운 필기 등 다양한 요소를 생성하고 관리할 수 있는 웹 애플리케이션입니다. 사용자들은 무한한 공간에서 아이디어를 시각화하고, 협업하며 지식을 공유할 수 있습니다.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 1. 기술 스택
+이 프로젝트는 다음과 같은 기술 스택으로 구성되어 있습니다.
 
-Currently, two official plugins are available:
+* 프론트엔드:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+  * React: 사용자 인터페이스를 구축하기 위한 JavaScript 라이브러리.
 
-## Expanding the ESLint configuration
+  * Vite: 빠르고 가벼운 개발 서버 및 번들러.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+  * TypeScript: JavaScript에 타입 시스템을 추가하여 코드의 안정성과 가독성을 향상.
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+  * InfiniteCanvas.tsx: 무한 캔버스 기능을 담당하는 핵심 React 컴포넌트.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+* 백엔드:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+  * Go: 빠르고 효율적인 백엔드 로직 처리를 위한 프로그래밍 언어.
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+* 데이터베이스:
+
+  * PostgreSQL: 안정적이고 강력한 관계형 데이터베이스.
+
+## 2. 프로젝트 구조
+프로젝트는 프론트엔드와 백엔드로 나뉘어 구성되어 있습니다.
+
+### 2.1. 프론트엔드 (React, Vite, TypeScript)
+* `src/components/InfiniteCanvas.tsx`: 무한 캔버스의 모든 렌더링 및 사용자 인터랙션 로직을 담당하는 핵심 컴포넌트입니다. 이미지, 글상자, 필기선 및 해당 점들의 입력과 렌더링을 처리합니다.
+
+* 데이터 전송: 캔버스에 추가되는 이미지, 글상자, 필기선(및 점들)의 정보는 JSON 형식으로 백엔드 서버에 전송됩니다.
+
+### 2.2. 백엔드 (Go)
+백엔드 서버는 main.go 파일을 중심으로 다음 폴더들로 구성됩니다.
+
+* `db/`: 데이터베이스 연결 설정 및 초기화, 마이그레이션 등 데이터베이스 관련 로직을 관리합니다.
+
+* `routes/`: API 엔드포인트 및 라우팅을 정의합니다.
+
+* `uploads/`: 파일 업로드 처리에 관련된 로직 및 설정 (예: 이미지 파일 저장 경로)을 담당합니다.
+
+* `handlers/`:캔버스 핸들러: 프론트엔드에서 전송된 캔버스 데이터(이미지, 글상자, 필기선 정보)를 수신하고 PostgreSQL 데이터베이스에 저장하는 로직을 포함합니다.
+
+  *  업로드 핸들러: 이미지 등 파일을 서버에 업로드하고 해당 정보를 관리하는 로직을 포함합니다.
+
+* `models/`: 데이터베이스 테이블 구조와 매핑되는 Go 구조체(struct)를 정의하여 데이터 모델을 관리합니다.
+
+* `main.go`: 서버의 진입점으로, 라우터 설정, 데이터베이스 연결 초기화, 서버 실행 등 전체 애플리케이션을 부트스트랩합니다.
