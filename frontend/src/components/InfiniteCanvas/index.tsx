@@ -123,9 +123,25 @@ const InfiniteCanvas: React.FC = () => {
         currentLine.current = [{ x, y }];
         setIsDrawing(true);
         } else if (tool === 'handle') {
-        // 이미지/텍스트 클릭 감지 로직은 useElementManipulation으로 이동
-        // setMovingObject 호출
-        // useElementManipulation 훅에서 이 로직을 처리하도록 수정 필요
+        setMovingObject(null);
+        const { x, y } = getCanvasCoords(e);
+        // 이미지 클릭 감지
+        for (let i = images.length - 1; i >= 0; i--) {
+            const img = images[i];
+        if (x >= img.x && x <= img.x + img.width && y >= img.y && y <= img.y + img.height) {
+        setMovingObject({ type: 'image', index: i , id: img.id });
+        return;
+        }
+        }
+        // 텍스트 박스 클릭 감지
+        for (let i = textBoxes.length - 1; i >= 0; i--) {
+        const box = textBoxes[i];
+        const textWidth = 1000, textHeight = 300;
+        if (x >= box.x && x <= box.x + textWidth && y >= box.y && y <= box.y + textHeight) {
+        setMovingObject({ type: 'text', index: i, id: box.id });
+        return;
+        }
+        }
         } else if (tool === 'text') {
         handleTextTool(e); // 텍스트 툴 로직 호출
         }
