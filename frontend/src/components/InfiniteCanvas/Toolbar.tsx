@@ -22,9 +22,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <button onClick={() => setTool('eraser')}>Eraser</button>
       <button onClick={() => setTool('handle')}>Handle</button>
       <button onClick={() => setTool('text')}>Text</button>
-      <label className="button-like-input">
-        Upload Image
-        <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+      <label className="button-like-input" style={{ color: 'black' }}>
+        <input type="file" accept="image/*" onChange={handleImageUpload}/>
       </label>
       <button onClick={handleSave}>Save</button>
       <button onClick={handleLoad}>Load</button>

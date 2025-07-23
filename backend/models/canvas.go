@@ -6,12 +6,12 @@ type Point struct {
 }
 
 type Line struct {
-	ID	   string     `json:"id"`
+	ID     string  `json:"id"`
 	Points []Point `json:"points"`
 }
 
 type Image struct {
- ID	   string     `json:"id"`
+	ID     string  `json:"id"`
 	X      float64 `json:"x"`
 	Y      float64 `json:"y"`
 	Width  float64 `json:"width"`
@@ -20,16 +20,16 @@ type Image struct {
 }
 
 type TextBox struct {
- ID	   string     `json:"id"`
+	ID      string  `json:"id"`
 	X       float64 `json:"x"`
 	Y       float64 `json:"y"`
- Width  float64 `json:"width"`
-	Height float64 `json:"height"`
+	Width   float64 `json:"width"`
+	Height  float64 `json:"height"`
 	Content string  `json:"content"`
 }
 
 type Payload struct {
-	Lines   []Line   `json:"lines"`
-	Images  []Image  `json:"images"`
+	Lines     []Line    `json:"lines"`
+	Images    []Image   `json:"images"`
 	TextBoxes []TextBox `json:"textBoxes"`
 }
