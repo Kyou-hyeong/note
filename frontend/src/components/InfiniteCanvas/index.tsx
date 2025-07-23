@@ -39,6 +39,7 @@ const InfiniteCanvas: React.FC = () => {
         movingObject,
         setMovingObject,
         handleTextTool,
+        moveElement,
     } = useElementManipulation(getCanvasCoords, tool);
 
     // 4. 데이터 저장 및 불러오기 관련 로직 관리
@@ -165,8 +166,7 @@ const InfiniteCanvas: React.FC = () => {
             currentLine.current.push({ x, y });
             redrawWith(drawnLines, images, textBoxes); // 매 프레임 그리기
         } else if (tool === 'handle' && movingObject) {
-        // 요소 이동 로직은 useElementManipulation으로 이동
-        // setImages, setTextBoxes 호출
+            moveElement(e); // useElementManipulation 훅에서 이동 로직 처리
         }
     };
 
