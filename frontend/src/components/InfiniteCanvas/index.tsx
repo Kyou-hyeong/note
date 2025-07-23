@@ -22,22 +22,16 @@ const InfiniteCanvas: React.FC = () => {
 
     // 2. 그리기(선) 관련 로직 관리
     const {
-        isDrawing,
-        setIsDrawing,
-        drawnLines,
-        setDrawnLines,
-        currentLine,
-        eraseAtPointer,
+        isDrawing,setIsDrawing,
+        drawnLines,setDrawnLines,
+        currentLine,eraseAtPointer,
     } = useDrawing(getCanvasCoords, tool);
 
     // 3. 요소 조작(이미지/텍스트 이동) 관련 로직 관리
     const {
-        images,
-        setImages,
-        textBoxes,
-        setTextBoxes,
-        movingObject,
-        setMovingObject,
+        images,setImages,
+        textBoxes,setTextBoxes,
+        movingObject,setMovingObject,
         handleTextTool,
         moveElement,
     } = useElementManipulation(getCanvasCoords, tool);

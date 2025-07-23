@@ -1,7 +1,5 @@
-// src/components/InfiniteCanvas/hooks/useCanvasRendering.ts
 import { useCallback } from 'react';
 import type { RefObject } from 'react';
-
 import type { Point, LineElement, ImageElement, TextBoxElement } from '../types';
 
 export const useCanvasRendering = (
@@ -52,8 +50,12 @@ export const useCanvasRendering = (
     // 텍스트 그리기
     texts.forEach(box => {
       ctx.fillStyle = 'black';
-      ctx.font = '16px sans-serif';
-      ctx.fillText(box.text, box.x, box.y);
+      ctx.font = '100px Arial';
+      ctx.fillText(box.text, box.x, box.y + 16); // 텍스트 위치 조정
+
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(box.x, box.y, box.width, box.height);
     });
 
     // 현재 그리는 선 (실시간 업데이트)

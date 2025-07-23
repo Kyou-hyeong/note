@@ -27,7 +27,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       </label>
       <button onClick={handleSave}>Save</button>
       <button onClick={handleLoad}>Load</button>
-      <span>Tool: {tool}</span>
+      <span style={{ color: 'black' }}>Tool: {tool}</span>
     </div>
   );
 };
