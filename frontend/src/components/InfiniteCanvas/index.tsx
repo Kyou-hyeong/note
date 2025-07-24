@@ -4,15 +4,15 @@ import { useDrawing } from './hooks/useDrawing';
 import { useElementManipulation } from './hooks/useElementManipulation';
 import { usePersistence } from './hooks/usePersistence';
 import { useCanvasRendering } from './hooks/useCanvasRendering';
-import { Toolbar } from './Toolbar'; // Toolbar 컴포넌트 임포트
-import './InfiniteCanvas.css';
-import type { Point, LineElement } from './types'; // 타입 임포트
-import { v4 as uuidv4 } from 'uuid'; // UUID 생성기 임포트
+import { Toolbar } from './Toolbar';
+import './index.css';
+import type { Point, LineElement } from './types';
+import { v4 as uuidv4 } from 'uuid';
 
 const InfiniteCanvas: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement|null>(null);
 
-    // 1. 캔버스 기본 상태 (오프셋, 스케일, 도구) 관리
+    // 1. 기본 상태 관리 - 오프셋, 스케일, 도구
     const { 
         offset, setOffset,
         scale, setScale,
@@ -20,14 +20,15 @@ const InfiniteCanvas: React.FC = () => {
         getCanvasCoords 
     } = useCanvasState(canvasRef);
 
-    // 2. 그리기(선) 관련 로직 관리
+    // 2. 선 그리기 로직 관리
     const {
         isDrawing,setIsDrawing,
         drawnLines,setDrawnLines,
         currentLine,eraseAtPointer,
     } = useDrawing(getCanvasCoords, tool);
 
-    // 3. 요소 조작(이미지/텍스트 이동) 관련 로직 관리
+    // 3. 이미지/텍스트 이동 관련 로직 관리 
+    // 추후에 이미지/텍스트 크기 조절 기능 추가 가능
     const {
         images,setImages,
         textBoxes,setTextBoxes,
@@ -54,7 +55,7 @@ const InfiniteCanvas: React.FC = () => {
         currentLine.current
     );
 
-    // 모든 상태 변화 시 캔버스 다시 그리기 (rendering hook으로 통합)
+    // 모든 상태 변화 시 캔버스 렌더링
     useEffect(() => {
         redrawWith(drawnLines, images, textBoxes);
     }, [offset, scale, drawnLines, images, textBoxes, redrawWith]);
@@ -98,49 +99,49 @@ const InfiniteCanvas: React.FC = () => {
         pointers.current.set(e.pointerId, pos);
 
         if (e.pointerType === 'mouse' && e.button === 1) {
-        setIsMiddleDragging(true);
-        middleDragStart.current = pos;
-        return;
+            setIsMiddleDragging(true);
+            middleDragStart.current = pos;
+            return;
         }
 
         if (pointers.current.size === 2) {
-        const [p1, p2] = Array.from(pointers.current.values());
-        lastTouchDistance.current = getDistance(p1, p2);
-        lastTouchCenter.current = getCenter(p1, p2);
+            const [p1, p2] = Array.from(pointers.current.values());
+            lastTouchDistance.current = getDistance(p1, p2);
+            lastTouchCenter.current = getCenter(p1, p2);
         }
 
         // 도구별 로직 호출
         if (tool === 'eraser') {
-        eraseAtPointer(e);
+            eraseAtPointer(e);
         } else if (tool === 'pen') {
-        const { x, y } = getCanvasCoords(e);
-        currentLine.current = [{ x, y }];
-        setIsDrawing(true);
+            const { x, y } = getCanvasCoords(e);
+            currentLine.current = [{ x, y }];
+            setIsDrawing(true);
         } else if (tool === 'handle') {
-        setMovingObject(null);
-        const { x, y } = getCanvasCoords(e);
-        // 이미지 클릭 감지
-        for (let i = images.length - 1; i >= 0; i--) {
-            const img = images[i];
-        if (x >= img.x && x <= img.x + img.width && y >= img.y && y <= img.y + img.height) {
-        setMovingObject({ type: 'image', index: i , id: img.id });
-        return;
-        }
+            setMovingObject(null);
+            const { x, y } = getCanvasCoords(e);
+            // 이미지 클릭 감지
+            for (let i = images.length - 1; i >= 0; i--) {
+                const img = images[i];
+            if (x >= img.x && x <= img.x + img.width && y >= img.y && y <= img.y + img.height) {
+                setMovingObject({ type: 'image', index: i , id: img.id });
+                return;
+            }
         }
         // 텍스트 박스 클릭 감지
         for (let i = textBoxes.length - 1; i >= 0; i--) {
-        const box = textBoxes[i];
-        const textWidth = 1000, textHeight = 300;
-        if (x >= box.x && x <= box.x + textWidth && y >= box.y && y <= box.y + textHeight) {
-        setMovingObject({ type: 'text', index: i, id: box.id });
-        return;
-        }
+            const box = textBoxes[i];
+            const textWidth = 1000, textHeight = 300;
+            if (x >= box.x && x <= box.x + textWidth && y >= box.y && y <= box.y + textHeight) {
+                setMovingObject({ type: 'text', index: i, id: box.id });
+                return;
+            }
         }
         } else if (tool === 'text') {
-        handleTextTool(e); // 텍스트 툴 로직 호출
+            handleTextTool(e); // 텍스트 툴 로직 호출
         }
     };
-
+    // 포인터 이동 핸들러
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const pos = { x: e.clientX, y: e.clientY };
 
@@ -179,7 +180,7 @@ const InfiniteCanvas: React.FC = () => {
             moveElement(e); // useElementManipulation 훅에서 이동 로직 처리
         }
     };
-
+    // 포인터 업 핸들러
     const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
         pointers.current.delete(e.pointerId);
 
@@ -209,17 +210,17 @@ const InfiniteCanvas: React.FC = () => {
         }
         setMovingObject(null);
     };
-
+    // 휠 이벤트 핸들러 (줌 기능)
     const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
         e.preventDefault();
         const scaleFactor = 1.1;
         const newScale = e.deltaY < 0 ? scale * scaleFactor : scale / scaleFactor;
         setScale(newScale);
     };
-
+    // 컨텍스트 메뉴 방지 (우클릭 메뉴 방지)
     const handleContextMenu = (e: React.MouseEvent) => e.preventDefault();
 
-    // 핀치 줌/이동 유틸리티 함수 (외부로 분리 가능)
+    // 핀치 줌/이동 유틸리티 함수
     const getDistance = (p1: Point, p2: Point) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
     const getCenter = (p1: Point, p2: Point): Point => ({ x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 });
 
@@ -253,7 +254,7 @@ const InfiniteCanvas: React.FC = () => {
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                onPointerLeave={handlePointerUp} // 캔버스 밖으로 나갈 때도 포인터 업 처리
+                onPointerLeave={handlePointerUp}
                 onContextMenu={handleContextMenu}
             />
     </div>

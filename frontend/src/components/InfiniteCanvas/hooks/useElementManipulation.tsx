@@ -10,6 +10,7 @@ export const useElementManipulation = (getCanvasCoords: GetCanvasCoords, tool: T
   const [textBoxes, setTextBoxes] = useState<TextBoxElement[]>([]);
   const [movingObject, setMovingObject] = useState<{ type: 'image' | 'text'; id: string; index: number } | null>(null);
 
+
   // 텍스트 박스 생성
   const handleTextTool = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     const { x, y } = getCanvasCoords(e);
@@ -19,7 +20,7 @@ export const useElementManipulation = (getCanvasCoords: GetCanvasCoords, tool: T
     }
   }, [getCanvasCoords]);
 
-  // 요소 이동 로직 (handlePointerMove에서 호출)
+  // 요소 이동 로직 
   const moveElement = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!movingObject) return;
 
@@ -48,6 +49,6 @@ export const useElementManipulation = (getCanvasCoords: GetCanvasCoords, tool: T
     movingObject,
     setMovingObject,
     handleTextTool,
-    moveElement, // 이 함수를 InfiniteCanvas/index.tsx의 handlePointerMove에서 호출
+    moveElement,
   };
 };

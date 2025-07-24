@@ -1,8 +1,5 @@
-// src/components/InfiniteCanvas/types.ts
-
 // 캔버스 요소의 상태를 나타내는 타입 정의
-export type CanvasElementStatus = 'new' | 'modified' | 'deleted' | 'unchanged'; // 'deldeted' -> 'deleted'로 수정!
-
+export type CanvasElementStatus = 'new' | 'modified' | 'deleted' | 'unchanged'; 
 // 선, 이미지, 텍스트 박스를 위한 타입 정의
 export type Point = {
     x: number;
@@ -41,9 +38,17 @@ export type CanvasElementType = LineElement | ImageElement | TextBoxElement;
 
 // 백엔드와 통신할 페이로드 타입 (예시, 실제 구현에 따라 달라질 수 있음)
 export type CanvasSavePayload = {
-  lines: Omit<LineElement, 'status'>[];
-  images: Omit<ImageElement, 'image' | 'status'>[];
-  textBoxes: Omit<TextBoxElement, 'status'>[];
+  addedLines?: Omit<LineElement, 'status'>[];
+  modifiedLines?: Omit<LineElement, 'status'>[];
+  deletedLineIds?: string[];
+
+  addedImages?: Omit<ImageElement, 'image' | 'status'>[]; // image 필드 제외
+  modifiedImages?: Omit<ImageElement, 'image' | 'status'>[]; // image 필드 제외
+  deletedImageIds?: string[];
+
+  addedTextBoxes?: Omit<TextBoxElement, 'status'>[];
+  modifiedTextBoxes?: Omit<TextBoxElement, 'status'>[];
+  deletedTextBoxIds?: string[];
 };
 
 export type CanvasLoadData = {
