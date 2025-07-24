@@ -22,10 +22,22 @@ export const usePersistence = (
   const handleSave = useCallback(async () => {
     // TODO: 여기에서 델타 업데이트 로직 구현 (new, modified, deleted 분리)
     // 현재는 모든 데이터를 보내는 방식
-    const lineData = drawnLines.map(line => ({
-      id: line.id, // ID 포함
-      points: line.points
-    }));
+    const lineData = drawnLines.map(line => {
+      if (line.status === 'deleted') return null; // deleted 상태는 제외
+      if (line.status === 'unchanged') {
+        return {
+          id: line.id,
+          points: line.points
+        };
+      } else if (line.status === 'new' || line.status === 'modified') {
+        return {
+          id: line.id,
+          points: line.points,
+          status: line.status   // 새로 추가된 선은 'new' 상태로 저장
+        };
+      }
+    }).filter(Boolean) as LineElement[]; // null 제거
+
     const imageData = images.map(img => ({
       id: img.id, // ID 포함
       x: img.x, y: img.y, width: img.width, height: img.height,

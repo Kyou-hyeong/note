@@ -42,13 +42,17 @@ export type CanvasSavePayload = {
   modifiedLines?: Omit<LineElement, 'status'>[];
   deletedLineIds?: string[];
 
-  addedImages?: Omit<ImageElement, 'image' | 'status'>[]; // image 필드 제외
-  modifiedImages?: Omit<ImageElement, 'image' | 'status'>[]; // image 필드 제외
+  addedImages?: Omit<ImageElement, 'image' | 'status'>[];
+  modifiedImages?: Omit<ImageElement, 'image' | 'status'>[];
   deletedImageIds?: string[];
 
   addedTextBoxes?: Omit<TextBoxElement, 'status'>[];
   modifiedTextBoxes?: Omit<TextBoxElement, 'status'>[];
   deletedTextBoxIds?: string[];
+  
+  lines: Omit<LineElement, 'status'>[];
+  images: Omit<ImageElement, 'image' | 'status'>[];
+  textBoxes: Omit<TextBoxElement, 'status'>[];
 };
 
 export type CanvasLoadData = {

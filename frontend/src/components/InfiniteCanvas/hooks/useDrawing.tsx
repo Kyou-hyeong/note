@@ -19,8 +19,12 @@ export const useDrawing = (getCanvasCoords: GetCanvasCoords, tool: ToolType) => 
         // 선의 어떤 점이든 마우스 위치 근처에 있으면 해당 선 삭제
         return !line.points.some(pt => Math.hypot(pt.x - x, pt.y - y) < threshold);
       });
-      // TODO: 삭제된 선은 DB에서 제거하도록 'deleted' status를 부여해야 함
       // 현재는 UI에서만 제거되므로, DB 동기화를 위해 deleted status 부여 로직 필요
+      updatedLines.forEach(line => {
+        if (line.status !== 'deleted') {
+          line.status = 'deleted';
+        }
+      });
       return updatedLines;
     });
   }, [getCanvasCoords]);
