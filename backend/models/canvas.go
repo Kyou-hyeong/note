@@ -29,6 +29,18 @@ type TextBox struct {
 }
 
 type Payload struct {
+	AddedLines    []Line `json:"addedLines"`
+	ModifiedLines []Line `json:"modifiedLines"`
+	DeletedLines  []Line `json:"deletedLines"`
+
+	AddedImages    []Image `json:"addedImages"`
+	ModifiedImages []Image `json:"modifiedImages"`
+	DeletedImages  []Image `json:"deletedImages"`
+
+	AddedTextBoxes    []TextBox `json:"addedTextBoxes"`
+	ModifiedTextBoxes []TextBox `json:"modifiedTextBoxes"`
+	DeletedTextBoxes  []TextBox `json:"deletedTextBoxes"`
+
 	Lines     []Line    `json:"lines"`
 	Images    []Image   `json:"images"`
 	TextBoxes []TextBox `json:"textBoxes"`
