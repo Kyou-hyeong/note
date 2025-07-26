@@ -20,10 +20,8 @@ export const usePersistence = (
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
   const handleSave = useCallback(async () => {
-    // TODO: 여기에서 델타 업데이트 로직 구현 (new, modified, deleted 분리)
-    // 현재는 모든 데이터를 보내는 방식
     const lineData = drawnLines.map(line => {
-      if (line.status === 'deleted') return null; // deleted 상태는 제외
+      if (line.status === 'deleted') return null;
       if (line.status === 'unchanged') {
         return {
           id: line.id,
@@ -33,24 +31,62 @@ export const usePersistence = (
         return {
           id: line.id,
           points: line.points,
-          status: line.status   // 새로 추가된 선은 'new' 상태로 저장
+          status: line.status
         };
       }
     }).filter(Boolean) as LineElement[]; // null 제거
 
-    const imageData = images.map(img => ({
-      id: img.id, // ID 포함
-      x: img.x, y: img.y, width: img.width, height: img.height,
-      url: img.url, // URL 사용
-    }));
-    const textData = textBoxes.map(box => ({
-      id: box.id, // ID 포함
-      x: box.x, y: box.y,
-      width: box.width, height: box.height,
-      text: box.text,
-    }));
+    const imageData = images.map(img => {
+      if (img.status === 'deleted') return null;
+      if (img.status === 'unchanged') {
+        return {
+          id: img.id,
+          x: img.x, y: img.y, width: img.width, height: img.height,
+          url: img.url // URL 포함
+        };
+      } else if (img.status === 'new' || img.status === 'modified') {
+        return {
+          id: img.id,
+          x: img.x, y: img.y, width: img.width, height: img.height,
+          url: img.url, // URL 포함
+          status: img.status
+        };
+      }
+    }).filter(Boolean) as ImageElement[]; // null 제거
+
+    const textData = textBoxes.map(box => {
+      if (box.status === 'deleted') return null;
+      if (box.status === 'unchanged') {
+        return {
+          id: box.id,
+          text: box.text,
+          x: box.x, y: box.y,
+          width: box.width, height: box.height
+        };
+      } else if (box.status === 'new' || box.status === 'modified') {
+        return {
+          id: box.id,
+          text: box.text,
+          x: box.x, y: box.y,
+          width: box.width, height: box.height,
+          status: box.status
+        };
+      }
+    }).filter(Boolean) as TextBoxElement[]; // null 제거
 
     const payload: CanvasSavePayload = {
+      addedLines: lineData.filter(line => line.status === 'new'),
+      modifiedLines: lineData.filter(line => line.status === 'modified'), 
+      deletedLineIds: lineData.filter(line => line.status === 'deleted').map(line => line.id),
+
+      addedImages: imageData.filter(img => img.status === 'new'),
+      modifiedImages: imageData.filter(img => img.status === 'modified'),
+      deletedImageIds: imageData.filter(img => img.status === 'deleted').map(img => img.id),
+
+      addedTextBoxes: textData.filter(box => box.status === 'new'),
+      modifiedTextBoxes: textData.filter(box => box.status === 'modified'),
+      deletedTextBoxIds: textData.filter(box => box.status === 'deleted').map(box => box.id),
+      
       lines: lineData,
       images: imageData,
       textBoxes: textData
@@ -69,7 +105,6 @@ export const usePersistence = (
       console.log("Canvas data saved successfully!");
     } catch (err) {
       console.error("저장 실패:", err);
-      // alert("저장에 실패했습니다."); // 배포 시에는 alert 지양
     }
   }, [drawnLines, images, textBoxes, API_URL]);
 

@@ -111,32 +111,36 @@ const InfiniteCanvas: React.FC = () => {
         }
 
         // 도구별 로직 호출
+        // 지우개 도구
         if (tool === 'eraser') {
             eraseAtPointer(e);
-        } else if (tool === 'pen') {
+        } 
+        // 펜 도구
+        else if (tool === 'pen') {
             const { x, y } = getCanvasCoords(e);
             currentLine.current = [{ x, y }];
             setIsDrawing(true);
-        } else if (tool === 'handle') {
+        } 
+        // 요소 이동 도구
+        else if (tool === 'handle') {
             setMovingObject(null);
             const { x, y } = getCanvasCoords(e);
             // 이미지 클릭 감지
             for (let i = images.length - 1; i >= 0; i--) {
                 const img = images[i];
-            if (x >= img.x && x <= img.x + img.width && y >= img.y && y <= img.y + img.height) {
-                setMovingObject({ type: 'image', index: i , id: img.id });
-                return;
+                if (x >= img.x && x <= img.x + img.width && y >= img.y && y <= img.y + img.height) {
+                    setMovingObject({ type: 'image', index: i , id: img.id, status: img.status || 'new' });
+                    return;
+                    }
+                }
+            // 텍스트 박스 클릭 감지
+            for (let i = textBoxes.length - 1; i >= 0; i--) {
+                const box = textBoxes[i];
+                if (x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height) {
+                    setMovingObject({ type: 'text', index: i, id: box.id, status: box.status || 'new' });
+                    return;
+                }
             }
-        }
-        // 텍스트 박스 클릭 감지
-        for (let i = textBoxes.length - 1; i >= 0; i--) {
-            const box = textBoxes[i];
-            const textWidth = 1000, textHeight = 300;
-            if (x >= box.x && x <= box.x + textWidth && y >= box.y && y <= box.y + textHeight) {
-                setMovingObject({ type: 'text', index: i, id: box.id });
-                return;
-            }
-        }
         } else if (tool === 'text') {
             handleTextTool(e); // 텍스트 툴 로직 호출
         }

@@ -8,7 +8,7 @@ type GetCanvasCoords = (e: React.PointerEvent | MouseEvent) => Point;
 export const useElementManipulation = (getCanvasCoords: GetCanvasCoords, tool: ToolType) => {
   const [images, setImages] = useState<ImageElement[]>([]);
   const [textBoxes, setTextBoxes] = useState<TextBoxElement[]>([]);
-  const [movingObject, setMovingObject] = useState<{ type: 'image' | 'text'; id: string; index: number } | null>(null);
+  const [movingObject, setMovingObject] = useState<{ type: 'image' | 'text'; id: string; index: number, status: CanvasElementStatus } | null>(null);
 
 
   // 텍스트 박스 생성
@@ -29,13 +29,13 @@ export const useElementManipulation = (getCanvasCoords: GetCanvasCoords, tool: T
     if (movingObject.type === 'image') {
       setImages(prev => {
         const newImgs = [...prev];
-          newImgs[movingObject.index] = { ...newImgs[movingObject.index], x, y };
+          newImgs[movingObject.index] = { ...newImgs[movingObject.index], x, y, status: 'modified' };
           return newImgs;
       });
     } else if (movingObject.type === 'text') {
       setTextBoxes(prev => {
         const newBoxes = [...prev];
-        newBoxes[movingObject.index] = { ...newBoxes[movingObject.index], x, y };
+        newBoxes[movingObject.index] = { ...newBoxes[movingObject.index], x, y, status: 'modified' };
         return newBoxes;
       });
     }
